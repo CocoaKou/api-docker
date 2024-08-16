@@ -1,0 +1,44 @@
+name: Build and Push Docker Image to ECR
+
+on:
+  push:
+    branches:
+      - dev/cocoakou/dockerize
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          region: us-east-1
+
+      - name: Build and tag Docker image
+        run: |
+          # 获取 AWS 账户 ID
+          aws_account_id=017820676329
+          # 设置目标 ECR 存储库 URI
+          ecr_repo_uri=$aws_account_id.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
+          # 构建 Docker 镜像
+          docker build -t $ecr_repo_uri:${{ secrets.IMAGE_TAG }} .
+          # 标记 Docker 镜像
+          docker tag $ecr_repo_uri:${{ secrets.IMAGE_TAG }} $ecr_repo_uri:latest
+
+      - name: Push Docker image to Amazon ECR
+        run: |
+          # 获取 AWS 账户 ID
+          aws_account_id=$(aws sts get-caller-identity --query Account --output text)
+          # 设置目标 ECR 存储库 URI
+          ecr_repo_uri=$aws_account_id.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
+          # 推送 Docker 镜像
+          docker push $ecr_repo_uri:${{ secrets.IMAGE_TAG }}
+          docker push $ecr_repo_uri:latest
