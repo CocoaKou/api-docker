@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  #别名
+  wbwapi:
+    image: openjdk:18-jdk
+    #容器名称
+    container_name: wbwapi
+    #重启机制
+    restart: always
+      #依赖服务
+      #depends_on:
+      #- mysql
+    #- redis
+    #working_dir: /data
+    #映射目录
+    volumes:
+      - ./target:/data
+      # 指定容器时间为宿主机时间
+      - /etc/localtime:/etc/localtime
+    ports:
+      - "8080:8080"
+    #network_mode: "host"
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      # 指定时区
+      #- TZ=Asia/Shanghai
+    # jar 包名称必须改成你自己的
+    command: java -Xms256M -Xmx1024M -Xss1M -jar /data/wbwai-service-0.0.1-SNAPSHOT.jar
