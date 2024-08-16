@@ -1,0 +1,53 @@
+name: Spring Boot Dockerize2
+
+on:
+  push:
+    branches:
+      - dev/cocoakou/dockerize
+  pull_request:
+    branches:
+      - dev/cocoakou/manual
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 18
+        uses: actions/setup-java@v3
+        with:
+          java-version: '18'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: cocoakou
+          password: kyq123456
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t cocoakou/wbwapi:latest .
+          docker push cocoakou/wbwapi:latest
+
+      - name: Run Docker container
+        run: |
+          docker run -d -p 8080:8080 cocoakou/wbwapi:latest
+          # Optionally, add commands here to run integration tests or check the health of the service
